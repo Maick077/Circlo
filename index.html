@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Desenhe o Círculo Perfeito</title>
+
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #1e1e2f, #3a3a6a);
+    color: white;
+    text-align: center;
+  }
+
+  h1 {
+    margin-top: 20px;
+  }
+
+  canvas {
+    background: white;
+    border-radius: 10px;
+    margin-top: 20px;
+    cursor: crosshair;
+  }
+
+  .container {
+    max-width: 500px;
+    margin: auto;
+  }
+
+  .score {
+    font-size: 30px;
+    margin: 15px 0;
+  }
+
+  .best {
+    font-size: 18px;
+    color: #00ffcc;
+  }
+
+  button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: #00ffcc;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  button:hover {
+    background: #00ccaa;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>🎯 Desenhe um Círculo</h1>
+  <canvas id="canvas" width="400" height="400"></canvas>
+
+  <div class="score" id="result">0%</div>
+  <div class="best" id="bestScore">Melhor: 0%</div>
+
+  <button onclick="resetCanvas()">Tentar novamente</button>
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let drawing = false;
+let points = [];
+
+// carregar melhor score
+let best = localStorage.getItem("bestScore") || 0;
+document.getElementById("bestScore").innerText = "Melhor: " + best + "%";
+
+canvas.addEventListener("mousedown", () => {
+  drawing = true;
+  points = [];
+  ctx.beginPath();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+});
+
+canvas.addEventListener("mouseup", () => {
+  drawing = false;
+  calculateCircle();
+});
+
+canvas.addEventListener("mousemove", (e) => {
+  if (!drawing) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  points.push({ x, y });
+
+  ctx.lineWidth = 2;
+  ctx.lineTo(x, y);
+  ctx.stroke();
+});
+
+function calculateCircle() {
+  if (points.length < 10) return;
+
+  let centerX = 0;
+  let centerY = 0;
+
+  points.forEach(p => {
+    centerX += p.x;
+    centerY += p.y;
+  });
+
+  centerX /= points.length;
+  centerY /= points.length;
+
+  let distances = points.map(p =>
+    Math.hypot(p.x - centerX, p.y - centerY)
+  );
+
+  let avg = distances.reduce((a, b) => a + b) / distances.length;
+
+  let variance = distances.reduce((sum, d) =>
+    sum + Math.pow(d - avg, 2), 0) / distances.length;
+
+  let stdDev = Math.sqrt(variance);
+
+  let score = Math.max(0, 100 - stdDev * 2);
+  score = Math.min(100, score);
+  score = score.toFixed(2);
+
+  document.getElementById("result").innerText = score + "%";
+
+  // atualizar ranking (melhor score)
+  if (score > best) {
+    best = score;
+    localStorage.setItem("bestScore", best);
+    document.getElementById("bestScore").innerText = "Melhor: " + best + "%";
+  }
+}
+
+function resetCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById("result").innerText = "0%";
+}
+</script>
+
+</body>
+</html>
