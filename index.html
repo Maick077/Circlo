@@ -2,56 +2,51 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Desenhe o Círculo Perfeito</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circlo</title>
 
 <style>
   body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: Arial;
     background: linear-gradient(135deg, #1e1e2f, #3a3a6a);
     color: white;
     text-align: center;
   }
 
   h1 {
-    margin-top: 20px;
+    margin-top: 15px;
   }
 
   canvas {
     background: white;
-    border-radius: 10px;
-    margin-top: 20px;
-    cursor: crosshair;
+    border-radius: 12px;
+    margin-top: 15px;
+    touch-action: none;
   }
 
   .container {
     max-width: 500px;
     margin: auto;
+    padding: 10px;
   }
 
   .score {
-    font-size: 30px;
-    margin: 15px 0;
+    font-size: 28px;
+    margin: 10px 0;
   }
 
   .best {
-    font-size: 18px;
     color: #00ffcc;
   }
 
   button {
-    padding: 10px 20px;
+    padding: 12px 20px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     background: #00ffcc;
-    color: black;
     font-weight: bold;
-    cursor: pointer;
     margin-top: 10px;
-  }
-
-  button:hover {
-    background: #00ccaa;
   }
 </style>
 </head>
@@ -59,8 +54,8 @@
 <body>
 
 <div class="container">
-  <h1>🎯 Desenhe um Círculo</h1>
-  <canvas id="canvas" width="400" height="400"></canvas>
+  <h1>🎯 Circlo</h1>
+  <canvas id="canvas"></canvas>
 
   <div class="score" id="result">0%</div>
   <div class="best" id="bestScore">Melhor: 0%</div>
@@ -72,44 +67,71 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
+// RESPONSIVO
+function resizeCanvas() {
+  const size = Math.min(window.innerWidth * 0.9, 400);
+  canvas.width = size;
+  canvas.height = size;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
 let drawing = false;
 let points = [];
 
-// carregar melhor score
 let best = localStorage.getItem("bestScore") || 0;
 document.getElementById("bestScore").innerText = "Melhor: " + best + "%";
 
-canvas.addEventListener("mousedown", () => {
+function startDraw(e) {
   drawing = true;
   points = [];
   ctx.beginPath();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-});
+}
 
-canvas.addEventListener("mouseup", () => {
+function endDraw() {
   drawing = false;
   calculateCircle();
-});
+}
 
-canvas.addEventListener("mousemove", (e) => {
+function draw(x, y) {
   if (!drawing) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
   points.push({ x, y });
-
   ctx.lineWidth = 2;
   ctx.lineTo(x, y);
   ctx.stroke();
+}
+
+// MOUSE
+canvas.addEventListener("mousedown", startDraw);
+canvas.addEventListener("mouseup", endDraw);
+canvas.addEventListener("mousemove", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  draw(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+// TOUCH (CELULAR 🔥)
+canvas.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  startDraw();
+});
+
+canvas.addEventListener("touchend", (e) => {
+  e.preventDefault();
+  endDraw();
+});
+
+canvas.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  draw(touch.clientX - rect.left, touch.clientY - rect.top);
 });
 
 function calculateCircle() {
   if (points.length < 10) return;
 
-  let centerX = 0;
-  let centerY = 0;
+  let centerX = 0, centerY = 0;
 
   points.forEach(p => {
     centerX += p.x;
@@ -136,7 +158,6 @@ function calculateCircle() {
 
   document.getElementById("result").innerText = score + "%";
 
-  // atualizar ranking (melhor score)
   if (score > best) {
     best = score;
     localStorage.setItem("bestScore", best);
